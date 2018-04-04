@@ -463,3 +463,44 @@ func (d *App) LoadServiceDefinition(path string) (*ecs.CreateServiceInput, error
 		Role:                    c.Role,
 	}, nil
 }
+
+func NewTaskApp(conf *Config) (*App, error) {
+	if err := conf.TaskValidate(); err != nil {
+		return nil, errors.Wrap(err, "invalid configuration")
+	}
+	sess := session.Must(session.NewSession(
+		&aws.Config{Region: aws.String(conf.Region)},
+	))
+	d := &App{
+		ecs:    ecs.New(sess),
+		config: conf,
+	}
+	return d, nil
+}
+
+func (d *App) TaskCreate(opt TaskCreateOption) error {
+	ctx, cancel := d.Start()
+	defer cancel()
+
+	d.Log("Starting create task-definition")
+
+	td, err := d.LoadTaskDefinition(d.config.TaskDefinitionPath)
+	if err != nil {
+		return errors.Wrap(err, "create failed")
+	}
+
+	if *opt.DryRun {
+		d.Log("task definition:", td.String())
+		d.Log("DRY RUN OK")
+		return nil
+	}
+
+	_, err = d.RegisterTaskDefinition(ctx, td)
+	if err != nil {
+		return errors.Wrap(err, "create failed")
+	}
+
+	d.Log("TaskDefinition is created")
+
+	return nil
+}

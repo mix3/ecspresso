@@ -31,6 +31,9 @@ Commands:
 
   delete [<flags>]
     delete service
+
+  task create [<flags>]
+    task create
 ```
 
 For more options for sub-commands, See `ecspresso sub-command --help`.

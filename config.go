@@ -41,6 +41,13 @@ func (c *Config) Validate() error {
 	return nil
 }
 
+func (c *Config) TaskValidate() error {
+	if c.TaskDefinitionPath == "" {
+		return errors.New("task_definition is not defined")
+	}
+	return nil
+}
+
 func NewDefaultConfig() *Config {
 	return &Config{
 		Region:  os.Getenv("AWS_REGION"),

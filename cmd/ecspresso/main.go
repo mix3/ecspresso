@@ -47,6 +47,12 @@ func _main() int {
 		Force:  delete.Flag("force", "force delete. not confirm").Bool(),
 	}
 
+	taskCommand := kingpin.Command("task", "task")
+	taskCreate := taskCommand.Command("create", "task create")
+	taskCreateOption := ecspresso.TaskCreateOption{
+		DryRun: taskCreate.Flag("dry-run", "dry-run").Bool(),
+	}
+
 	sub := kingpin.Parse()
 
 	c := ecspresso.NewDefaultConfig()
@@ -55,27 +61,47 @@ func _main() int {
 		kingpin.Usage()
 		return 1
 	}
-	app, err := ecspresso.NewApp(c)
-	if err != nil {
-		log.Println(err)
-		return 1
-	}
 
+	var (
+		app *ecspresso.App
+		err error
+	)
 	switch sub {
-	case "deploy":
-		err = app.Deploy(deployOption)
-	case "status":
-		err = app.Status(statusOption)
-	case "rollback":
-		err = app.Rollback(rollbackOption)
-	case "create":
-		err = app.Create(createOption)
-	case "delete":
-		err = app.Delete(deleteOption)
+	case "deploy", "status", "rollback", "create", "delete":
+		app, err = ecspresso.NewApp(c)
+		if err != nil {
+			log.Println(err)
+			return 1
+		}
+
+		switch sub {
+		case "deploy":
+			err = app.Deploy(deployOption)
+		case "status":
+			err = app.Status(statusOption)
+		case "rollback":
+			err = app.Rollback(rollbackOption)
+		case "create":
+			err = app.Create(createOption)
+		case "delete":
+			err = app.Delete(deleteOption)
+		}
+	case "task create":
+		app, err = ecspresso.NewTaskApp(c)
+		if err != nil {
+			log.Println(err)
+			return 1
+		}
+
+		switch sub {
+		case "task create":
+			err = app.TaskCreate(taskCreateOption)
+		}
 	default:
 		kingpin.Usage()
 		return 1
 	}
+
 	if err != nil {
 		log.Printf("%s FAILED. %s", sub, err)
 		return 1
